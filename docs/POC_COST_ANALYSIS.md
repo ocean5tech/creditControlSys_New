@@ -68,6 +68,7 @@
 | **Azure SQL Database** | Basic (5 DTU) | $5 | 2GB存储 |
 | **应用内存缓存** | 免费 | $0 | 使用应用程序内存缓存 |
 | **Blob Storage** | 热存储 | $0.50 | 10GB测试数据 |
+| **数据迁移脚本** | 本地执行 | $0 | SQL+Python脚本本地运行 |
 | **小计** | | **$5.50** | |
 
 #### 3. 监控和开发工具 (POC配置)
@@ -123,8 +124,9 @@ Azure免费账户包含 (首12个月):
 | **Static Web Apps** | $9 | 12个月免费 | $0 |
 | **SQL Database** | $5 | 免费250GB | $0 |
 | **Application Insights** | $2.30 | 免费1GB | $0 |
-| **其他服务** | $4.03 | 部分免费优化 | $3 |
-| **优化后总计** | **$23.33** | | **$3/月** |
+| **数据迁移** | $0 | 本地脚本执行 | $0 |
+| **其他服务** | $3.03 | 部分免费优化 | $3 |
+| **优化后总计** | **$22.33** | | **$3/月** |
 
 ---
 
@@ -231,7 +233,31 @@ const getCachedCustomer = (customerId) => {
 // - 适合POC验证，生产环境需升级到Redis
 ```
 
-### 4. 数据管理优化
+### 4. POC数据迁移策略 (无ADF成本)
+```bash
+# POC数据迁移方案 - 本地执行，零Azure成本
+# 
+# 方案1: 直接SQL脚本迁移
+# 执行环境: 本地SQL客户端连接Azure SQL Database
+# 成本: $0
+
+# 1. 导出Legacy数据
+pg_dump -h 35.77.54.203 -U creditapp -d creditcontrol \
+    --data-only --table=customers > customers_data.sql
+
+# 2. 数据转换脚本 (Python本地执行)
+python convert_legacy_to_azure.py
+
+# 3. 导入Azure SQL Database
+sqlcmd -S your-server.database.windows.net -d creditcontrol-db \
+    -i converted_data.sql
+
+# 方案2: Python脚本迁移 (pandas)
+# 执行环境: 本地开发机器
+# 成本: $0
+```
+
+### 5. 数据管理优化
 ```sql
 -- POC数据策略
 -- 使用合成数据代替大量真实数据
