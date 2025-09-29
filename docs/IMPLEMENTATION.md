@@ -13,7 +13,287 @@
 
 ---
 
-## Phase 1: 基础设施建设 (Week 1-4)
+## 阶段1: 容器化现代化实施 (Week 1-8)
+
+### Phase 1A: Spring Boot微服务架构搭建 (Week 1-2)
+
+#### 1A.1 项目结构初始化
+```bash
+# 创建项目根目录结构
+mkdir -p creditControlSys_New/{backend,frontend,infrastructure,scripts}
+cd creditControlSys_New
+
+# 后端微服务目录结构
+mkdir -p backend/{customer-service,credit-service,risk-service,payment-service,report-service,notification-service}
+mkdir -p backend/shared/{common,config,security}
+
+# 前端项目结构
+mkdir -p frontend/{src,public,tests}
+
+# 基础设施配置
+mkdir -p infrastructure/{docker,nginx,monitoring}
+```
+
+#### 1A.2 Spring Boot微服务开发
+```yaml
+# backend/customer-service/src/main/resources/application.yml
+server:
+  port: 8081
+spring:
+  application:
+    name: customer-service
+  datasource:
+    url: jdbc:postgresql://database:5432/creditcontrol
+    username: ${DB_USERNAME:postgres}
+    password: ${DB_PASSWORD:postgres}
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    show-sql: false
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,metrics,prometheus
+  endpoint:
+    health:
+      show-details: always
+```
+
+#### 1A.3 微服务API设计
+```java
+// backend/customer-service/src/main/java/com/creditcontrol/customer/CustomerController.java
+@RestController
+@RequestMapping("/api/v1/customers")
+@CrossOrigin(origins = "http://localhost:3000")
+public class CustomerController {
+    
+    @Autowired
+    private CustomerService customerService;
+    
+    @GetMapping
+    public ResponseEntity<List<CustomerDto>> getAllCustomers() {
+        return ResponseEntity.ok(customerService.getAllCustomers());
+    }
+    
+    @GetMapping("/{id}")
+    public ResponseEntity<CustomerDto> getCustomer(@PathVariable Long id) {
+        return ResponseEntity.ok(customerService.getCustomer(id));
+    }
+    
+    @PostMapping
+    public ResponseEntity<CustomerDto> createCustomer(@RequestBody CustomerDto customer) {
+        return ResponseEntity.status(HttpStatus.CREATED)
+            .body(customerService.createCustomer(customer));
+    }
+}
+```
+
+### Phase 1B: React前端应用开发 (Week 3-4)
+
+#### 1B.1 React项目初始化
+```bash
+# 创建React应用
+cd frontend
+npx create-react-app . --template typescript
+npm install axios react-router-dom @mui/material @emotion/react @emotion/styled
+npm install --save-dev @types/react-router-dom
+```
+
+#### 1B.2 前端组件架构
+```typescript
+// frontend/src/components/CustomerSearch.tsx
+import React, { useState, useEffect } from 'react';
+import axios from 'axios';
+
+interface Customer {
+  id: number;
+  name: string;
+  creditLimit: number;
+  riskLevel: string;
+}
+
+const CustomerSearch: React.FC = () => {
+  const [customers, setCustomers] = useState<Customer[]>([]);
+  const [searchTerm, setSearchTerm] = useState('');
+
+  useEffect(() => {
+    fetchCustomers();
+  }, []);
+
+  const fetchCustomers = async () => {
+    try {
+      const response = await axios.get('http://localhost:8081/api/v1/customers');
+      setCustomers(response.data);
+    } catch (error) {
+      console.error('Error fetching customers:', error);
+    }
+  };
+
+  return (
+    <div className="customer-search">
+      <h2>客户搜索</h2>
+      <input
+        type="text"
+        placeholder="搜索客户..."
+        value={searchTerm}
+        onChange={(e) => setSearchTerm(e.target.value)}
+      />
+      <div className="customer-list">
+        {customers.map(customer => (
+          <div key={customer.id} className="customer-card">
+            <h3>{customer.name}</h3>
+            <p>信用额度: {customer.creditLimit}</p>
+            <p>风险等级: {customer.riskLevel}</p>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+};
+
+export default CustomerSearch;
+```
+
+### Phase 1C: Docker容器化和服务集成 (Week 5-6)
+
+#### 1C.1 Docker容器配置
+```dockerfile
+# backend/customer-service/Dockerfile
+FROM openjdk:17-jdk-slim
+
+WORKDIR /app
+COPY target/customer-service-1.0.0.jar app.jar
+
+EXPOSE 8080
+ENTRYPOINT ["java", "-jar", "app.jar"]
+```
+
+```dockerfile
+# frontend/Dockerfile
+FROM node:18-alpine AS build
+
+WORKDIR /app
+COPY package*.json ./
+RUN npm install
+
+COPY . .
+RUN npm run build
+
+FROM nginx:alpine
+COPY --from=build /app/build /usr/share/nginx/html
+COPY nginx.conf /etc/nginx/nginx.conf
+
+EXPOSE 3000
+```
+
+#### 1C.2 Docker Compose编排
+```yaml
+# docker-compose.yml
+version: '3.8'
+
+services:
+  # 前端服务
+  frontend:
+    build: ./frontend
+    ports:
+      - "3000:3000"
+    environment:
+      - REACT_APP_API_BASE_URL=http://localhost:8080/api/v1
+    depends_on:
+      - gateway
+
+  # API网关
+  gateway:
+    image: nginx:alpine
+    ports:
+      - "8080:80"
+    volumes:
+      - ./infrastructure/nginx/nginx.conf:/etc/nginx/nginx.conf
+    depends_on:
+      - customer-service
+      - credit-service
+
+  # 微服务
+  customer-service:
+    build: ./backend/customer-service
+    ports:
+      - "8081:8080"
+    environment:
+      - DB_HOST=database
+      - DB_PORT=5432
+      - DB_NAME=creditcontrol
+    depends_on:
+      - database
+
+  credit-service:
+    build: ./backend/credit-service
+    ports:
+      - "8082:8080"
+    environment:
+      - DB_HOST=database
+    depends_on:
+      - database
+
+  # 数据库
+  database:
+    image: postgres:15-alpine
+    ports:
+      - "5432:5432"
+    environment:
+      - POSTGRES_DB=creditcontrol
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  # 缓存
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+
+volumes:
+  postgres_data:
+```
+
+### Phase 1D: 测试验证和性能调优 (Week 7-8)
+
+#### 1D.1 集成测试脚本
+```bash
+#!/bin/bash
+# scripts/test-integration.sh
+
+echo "启动集成测试环境..."
+docker-compose up -d
+
+# 等待服务启动
+sleep 30
+
+echo "运行API测试..."
+# 客户服务测试
+curl -X GET http://localhost:8081/api/v1/customers
+curl -X POST http://localhost:8081/api/v1/customers \
+  -H "Content-Type: application/json" \
+  -d '{"name":"测试客户","creditLimit":50000,"riskLevel":"LOW"}'
+
+echo "运行前端E2E测试..."
+cd frontend && npm run test:e2e
+
+echo "性能测试..."
+# 使用k6进行负载测试
+k6 run scripts/load-test.js
+
+echo "清理测试环境..."
+docker-compose down
+```
+
+---
+
+## 阶段2: Azure云迁移实施 (Week 9-16)
+
+### Phase 2A: Azure基础设施搭建 (Week 9-10)
 
 ### Week 1: Azure环境搭建
 
