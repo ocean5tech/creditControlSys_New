@@ -15,6 +15,7 @@
 - [📚 **完整迁移计划**](./docs/MIGRATION_PLAN.md) - 详细的16周迁移计划
 - [🏗️ **架构设计**](./docs/ARCHITECTURE.md) - Legacy vs Azure架构对比
 - [💰 **成本预算**](./docs/COST_ANALYSIS.md) - 详细费用分析和ROI
+- [🧪 **POC成本分析**](./docs/POC_COST_ANALYSIS.md) - POC环境成本规划和优化策略
 - [🔄 **功能映射**](./docs/FEATURE_MAPPING.md) - 业务功能迁移对照表
 - [📦 **数据迁移**](./docs/DATA_MIGRATION.md) - 数据迁移策略和执行计划
 - [🚀 **实施指南**](./docs/IMPLEMENTATION.md) - 分阶段实施方法论
@@ -58,6 +59,12 @@
 ---
 
 ## 💰 **成本效益分析**
+
+### POC环境成本对比
+| 环境类型 | Legacy POC | Azure POC | 节省 |
+|----------|------------|-----------|------|
+| **POC (5-10用户)** | $766/月 | $15-31/月 | **96%** |
+| **6周POC总成本** | $1,149 | $180 | **84%** |
 
 ### 月度运营成本
 | 使用级别 | Legacy成本 | Azure成本 | 节省 |
