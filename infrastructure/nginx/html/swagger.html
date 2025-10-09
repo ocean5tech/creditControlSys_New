@@ -1,0 +1,443 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Credit Control System API - Swagger UI</title>
+    <link rel="stylesheet" type="text/css" href="https://unpkg.com/swagger-ui-dist@5.9.0/swagger-ui.css" />
+    <style>
+        html {
+            box-sizing: border-box;
+            overflow: -moz-scrollbars-vertical;
+            overflow-y: scroll;
+        }
+        *, *:before, *:after {
+            box-sizing: inherit;
+        }
+        body {
+            margin:0;
+            background: #fafafa;
+        }
+        .custom-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        .api-info {
+            background: white;
+            margin: 20px;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .endpoint-group {
+            margin: 15px 0;
+            padding: 15px;
+            border: 1px solid #e0e0e0;
+            border-radius: 6px;
+            background: #f9f9f9;
+        }
+        .method-get { color: #28a745; font-weight: bold; }
+        .method-post { color: #007bff; font-weight: bold; }
+        .method-put { color: #ffc107; font-weight: bold; }
+        .method-delete { color: #dc3545; font-weight: bold; }
+        .test-button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-left: 10px;
+        }
+        .test-button:hover {
+            background: #0056b3;
+        }
+        .response-area {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 4px;
+            padding: 10px;
+            margin-top: 10px;
+            font-family: monospace;
+            white-space: pre-wrap;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+    </style>
+</head>
+<body>
+    <div class="custom-header">
+        <h1>🏦 Credit Control System API</h1>
+        <p>Interactive API Documentation & Testing Interface</p>
+        <p><strong>Gateway:</strong> http://35.77.54.203:8080 | <strong>Version:</strong> 1.0.0</p>
+    </div>
+
+    <div class="api-info">
+        <h2>📋 Available APIs</h2>
+        
+        <!-- Gateway Health -->
+        <div class="endpoint-group">
+            <h3>🔧 Gateway Management</h3>
+            
+            <div style="margin: 10px 0;">
+                <span class="method-get">GET</span> 
+                <code>/health</code> - Gateway Health Check
+                <button class="test-button" onclick="testAPI('GET', '/health')">Test</button>
+            </div>
+            
+            <div style="margin: 10px 0;">
+                <span class="method-get">GET</span> 
+                <code>/api/v1/health</code> - All Services Health
+                <button class="test-button" onclick="testAPI('GET', '/api/v1/health')">Test</button>
+            </div>
+            
+            <div style="margin: 10px 0;">
+                <span class="method-get">GET</span> 
+                <code>/api/v1/docs</code> - API Documentation
+                <button class="test-button" onclick="testAPI('GET', '/api/v1/docs')">Test</button>
+            </div>
+        </div>
+
+        <!-- Customer Service -->
+        <div class="endpoint-group">
+            <h3>👥 Customer Service</h3>
+            
+            <div style="margin: 10px 0;">
+                <span class="method-get">GET</span> 
+                <code>/api/v1/customers</code> - Get All Customers
+                <button class="test-button" onclick="testAPI('GET', '/api/v1/customers')">Test</button>
+            </div>
+            
+            <div style="margin: 10px 0;">
+                <span class="method-get">GET</span> 
+                <code>/api/v1/customers/{id}</code> - Get Customer by ID
+                <br><small style="color: #666;">📝 Note: Use numeric ID (customerId: 1,2,3,4,5), not customerCode like CUST001</small>
+                <br><input type="number" id="customerId" placeholder="Enter customerId (e.g., 1)" style="margin-left: 10px; padding: 4px; margin-top: 5px;">
+                <button class="test-button" onclick="testCustomerById()">Test</button>
+                <span id="customerIdHint" style="margin-left: 10px; color: #28a745; font-size: 0.9em;"></span>
+            </div>
+            
+            <div style="margin: 10px 0;">
+                <span class="method-post">POST</span> 
+                <code>/api/v1/customers</code> - Create Customer
+                <button class="test-button" onclick="showCreateCustomerForm()">Test</button>
+            </div>
+            
+            <div id="createCustomerForm" style="display: none; margin-top: 10px;">
+                <textarea id="customerData" rows="8" style="width: 100%; font-family: monospace;" placeholder='{
+  "customerCode": "CUST006",
+  "companyName": "Test Company Ltd",
+  "contactPerson": "Test User",
+  "phone": "+1-555-0106",
+  "email": "test@company.com",
+  "industry": "Testing",
+  "registrationNumber": "REG001239"
+}'></textarea>
+                <br>
+                <button class="test-button" onclick="createCustomer()">Send Request</button>
+            </div>
+        </div>
+
+        <!-- Credit Service -->
+        <div class="endpoint-group">
+            <h3>💳 Credit Management Service</h3>
+            
+            <div style="margin: 10px 0;">
+                <span class="method-get">GET</span> 
+                <code>/api/v1/credit/profile/{customerId}</code> - Get Credit Profile
+                <input type="number" id="creditCustomerId" placeholder="Customer ID" style="margin-left: 10px; padding: 4px;">
+                <button class="test-button" onclick="testCreditProfile()">Test</button>
+            </div>
+            
+            <div style="margin: 10px 0;">
+                <span class="method-get">GET</span> 
+                <code>/api/v1/credit/assessment/{customerId}</code> - Credit Risk Assessment
+                <input type="number" id="assessmentCustomerId" placeholder="Customer ID" style="margin-left: 10px; padding: 4px;">
+                <button class="test-button" onclick="testCreditAssessment()">Test</button>
+            </div>
+            
+            <div style="margin: 10px 0;">
+                <span class="method-get">GET</span> 
+                <code>/api/v1/credit/summary</code> - Credit Summary
+                <button class="test-button" onclick="testAPI('GET', '/api/v1/credit/summary')">Test</button>
+            </div>
+            
+            <div style="margin: 10px 0;">
+                <span class="method-get">GET</span> 
+                <code>/api/v1/credit/health</code> - Service Health
+                <button class="test-button" onclick="testAPI('GET', '/api/v1/credit/health')">Test</button>
+            </div>
+        </div>
+
+        <!-- Risk Assessment Service -->
+        <div class="endpoint-group">
+            <h3>⚠️ Risk Assessment Service</h3>
+            
+            <div style="margin: 10px 0;">
+                <span class="method-get">GET</span> 
+                <code>/api/v1/risk/assessment/{customerId}</code> - Risk Assessment
+                <input type="number" id="riskCustomerId" placeholder="Customer ID" style="margin-left: 10px; padding: 4px;">
+                <button class="test-button" onclick="testRiskAssessment()">Test</button>
+            </div>
+            
+            <div style="margin: 10px 0;">
+                <span class="method-get">GET</span> 
+                <code>/api/v1/risk/monitoring/dashboard</code> - Risk Dashboard
+                <button class="test-button" onclick="testAPI('GET', '/api/v1/risk/monitoring/dashboard')">Test</button>
+            </div>
+            
+            <div style="margin: 10px 0;">
+                <span class="method-get">GET</span> 
+                <code>/api/v1/risk/health</code> - Service Health
+                <button class="test-button" onclick="testAPI('GET', '/api/v1/risk/health')">Test</button>
+            </div>
+        </div>
+
+        <!-- Payment Service -->
+        <div class="endpoint-group">
+            <h3>💰 Payment Service</h3>
+            
+            <div style="margin: 10px 0;">
+                <span class="method-get">GET</span> 
+                <code>/api/v1/payments/history/{customerId}</code> - Payment History
+                <input type="number" id="paymentCustomerId" placeholder="Customer ID" style="margin-left: 10px; padding: 4px;">
+                <button class="test-button" onclick="testPaymentHistory()">Test</button>
+            </div>
+            
+            <div style="margin: 10px 0;">
+                <span class="method-get">GET</span> 
+                <code>/api/v1/payments/summary</code> - Payment Summary
+                <button class="test-button" onclick="testAPI('GET', '/api/v1/payments/summary')">Test</button>
+            </div>
+            
+            <div style="margin: 10px 0;">
+                <span class="method-get">GET</span> 
+                <code>/api/v1/payments/health</code> - Service Health
+                <button class="test-button" onclick="testAPI('GET', '/api/v1/payments/health')">Test</button>
+            </div>
+        </div>
+
+        <!-- Report Service -->
+        <div class="endpoint-group">
+            <h3>📊 Report Service</h3>
+            
+            <div style="margin: 10px 0;">
+                <span class="method-get">GET</span> 
+                <code>/api/v1/reports/dashboard</code> - Business Dashboard
+                <button class="test-button" onclick="testAPI('GET', '/api/v1/reports/dashboard')">Test</button>
+            </div>
+            
+            <div style="margin: 10px 0;">
+                <span class="method-get">GET</span> 
+                <code>/api/v1/reports/analytics/trends</code> - Analytics Trends
+                <button class="test-button" onclick="testAPI('GET', '/api/v1/reports/analytics/trends')">Test</button>
+            </div>
+            
+            <div style="margin: 10px 0;">
+                <span class="method-get">GET</span> 
+                <code>/api/v1/reports/health</code> - Service Health
+                <button class="test-button" onclick="testAPI('GET', '/api/v1/reports/health')">Test</button>
+            </div>
+        </div>
+
+        <!-- Notification Service -->
+        <div class="endpoint-group">
+            <h3>🔔 Notification Service</h3>
+            
+            <div style="margin: 10px 0;">
+                <span class="method-get">GET</span> 
+                <code>/api/v1/notifications/alerts</code> - Active Alerts
+                <button class="test-button" onclick="testAPI('GET', '/api/v1/notifications/alerts')">Test</button>
+            </div>
+            
+            <div style="margin: 10px 0;">
+                <span class="method-get">GET</span> 
+                <code>/api/v1/notifications/history/{customerId}</code> - Notification History
+                <input type="number" id="notificationCustomerId" placeholder="Customer ID" style="margin-left: 10px; padding: 4px;">
+                <button class="test-button" onclick="testNotificationHistory()">Test</button>
+            </div>
+            
+            <div style="margin: 10px 0;">
+                <span class="method-get">GET</span> 
+                <code>/api/v1/notifications/health</code> - Service Health
+                <button class="test-button" onclick="testAPI('GET', '/api/v1/notifications/health')">Test</button>
+            </div>
+        </div>
+
+        <div id="response-container">
+            <h3>📄 Response</h3>
+            <div id="response" class="response-area">Click any "Test" button to see API response here...</div>
+        </div>
+    </div>
+
+    <script>
+        const baseURL = 'http://35.77.54.203:8080';
+        
+        function testAPI(method, endpoint) {
+            const url = baseURL + endpoint;
+            const responseDiv = document.getElementById('response');
+            
+            responseDiv.textContent = `🔄 Loading... ${method} ${endpoint}`;
+            
+            fetch(url, {
+                method: method,
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json'
+                }
+            })
+            .then(response => {
+                const contentType = response.headers.get('content-type');
+                if (contentType && contentType.includes('application/json')) {
+                    return response.json().then(data => ({
+                        status: response.status,
+                        statusText: response.statusText,
+                        data: data
+                    }));
+                } else {
+                    return response.text().then(text => ({
+                        status: response.status,
+                        statusText: response.statusText,
+                        data: text
+                    }));
+                }
+            })
+            .then(result => {
+                responseDiv.textContent = `Status: ${result.status} ${result.statusText}\n\n` + 
+                    JSON.stringify(result.data, null, 2);
+                responseDiv.style.color = result.status >= 200 && result.status < 300 ? '#28a745' : '#dc3545';
+            })
+            .catch(error => {
+                responseDiv.textContent = `❌ Error: ${error.message}`;
+                responseDiv.style.color = '#dc3545';
+            });
+        }
+        
+        function testCustomerById() {
+            const customerId = document.getElementById('customerId').value;
+            if (!customerId) {
+                alert('Please enter a Customer ID');
+                return;
+            }
+            testAPI('GET', `/api/v1/customers/${customerId}`);
+        }
+        
+        function showCreateCustomerForm() {
+            const form = document.getElementById('createCustomerForm');
+            form.style.display = form.style.display === 'none' ? 'block' : 'none';
+        }
+        
+        function createCustomer() {
+            const customerData = document.getElementById('customerData').value;
+            if (!customerData) {
+                alert('Please enter customer data');
+                return;
+            }
+            
+            try {
+                JSON.parse(customerData); // Validate JSON
+            } catch (e) {
+                alert('Invalid JSON format');
+                return;
+            }
+            
+            const url = baseURL + '/api/v1/customers';
+            const responseDiv = document.getElementById('response');
+            
+            responseDiv.textContent = '🔄 Creating customer...';
+            
+            fetch(url, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json'
+                },
+                body: customerData
+            })
+            .then(response => response.json().then(data => ({
+                status: response.status,
+                statusText: response.statusText,
+                data: data
+            })))
+            .then(result => {
+                responseDiv.textContent = `Status: ${result.status} ${result.statusText}\n\n` + 
+                    JSON.stringify(result.data, null, 2);
+                responseDiv.style.color = result.status >= 200 && result.status < 300 ? '#28a745' : '#dc3545';
+            })
+            .catch(error => {
+                responseDiv.textContent = `❌ Error: ${error.message}`;
+                responseDiv.style.color = '#dc3545';
+            });
+        }
+        
+        // Load available customer IDs for reference
+        function loadCustomerIds() {
+            fetch(baseURL + '/api/v1/customers')
+            .then(response => response.json())
+            .then(data => {
+                if (data.success && data.data && data.data.content) {
+                    const ids = data.data.content.map(c => `${c.customerId} (${c.customerCode})`).join(', ');
+                    document.getElementById('customerIdHint').textContent = `Available IDs: ${ids}`;
+                }
+            })
+            .catch(error => {
+                console.log('Could not load customer IDs:', error);
+            });
+        }
+        
+        // Additional test functions for new services
+        function testCreditProfile() {
+            const customerId = document.getElementById('creditCustomerId').value;
+            if (!customerId) {
+                alert('Please enter a Customer ID');
+                return;
+            }
+            testAPI('GET', `/api/v1/credit/profile/${customerId}`);
+        }
+        
+        function testCreditAssessment() {
+            const customerId = document.getElementById('assessmentCustomerId').value;
+            if (!customerId) {
+                alert('Please enter a Customer ID');
+                return;
+            }
+            testAPI('GET', `/api/v1/credit/assessment/${customerId}`);
+        }
+        
+        function testRiskAssessment() {
+            const customerId = document.getElementById('riskCustomerId').value;
+            if (!customerId) {
+                alert('Please enter a Customer ID');
+                return;
+            }
+            testAPI('GET', `/api/v1/risk/assessment/${customerId}`);
+        }
+        
+        function testPaymentHistory() {
+            const customerId = document.getElementById('paymentCustomerId').value;
+            if (!customerId) {
+                alert('Please enter a Customer ID');
+                return;
+            }
+            testAPI('GET', `/api/v1/payments/history/${customerId}`);
+        }
+        
+        function testNotificationHistory() {
+            const customerId = document.getElementById('notificationCustomerId').value;
+            if (!customerId) {
+                alert('Please enter a Customer ID');
+                return;
+            }
+            testAPI('GET', `/api/v1/notifications/history/${customerId}`);
+        }
+        
+        // Test gateway health on page load
+        window.onload = function() {
+            testAPI('GET', '/health');
+            loadCustomerIds();
+        };
+    </script>
+</body>
+</html>

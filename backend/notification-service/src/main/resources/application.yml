@@ -1,0 +1,92 @@
+# Notification-service Configuration
+server:
+  port: 8086  # 微服务端口，通过Nginx网关(8080)对外提供服务
+
+spring:
+  application:
+    name: notification-service
+  
+  # 数据库配置 - 使用现有PostgreSQL
+  datasource:
+    url: jdbc:postgresql://35.77.54.203:5432/creditcontrol
+    username: ${DB_USERNAME:creditapp}
+    password: ${DB_PASSWORD:secure123}
+    driver-class-name: org.postgresql.Driver
+    
+    # HikariCP 连接池配置
+    hikari:
+      maximum-pool-size: 20
+      minimum-idle: 5
+      connection-timeout: 30000
+      idle-timeout: 600000
+      max-lifetime: 1800000
+      leak-detection-threshold: 60000
+      pool-name: Notification-serviceCP
+  
+  # JPA配置
+  jpa:
+    hibernate:
+      ddl-auto: validate  # 不修改现有数据库结构
+    show-sql: false
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+        format_sql: true
+        use_sql_comments: true
+        jdbc:
+          time_zone: UTC
+  
+  # Redis配置
+  redis:
+    host: ${REDIS_HOST:localhost}
+    port: ${REDIS_PORT:6379}
+    password: ${REDIS_PASSWORD:}
+    timeout: 2000ms
+    lettuce:
+      pool:
+        max-active: 8
+        max-idle: 8
+        min-idle: 0
+        max-wait: -1ms
+
+# Actuator配置
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,metrics,prometheus,info
+      base-path: /actuator
+  endpoint:
+    health:
+      show-details: always
+      show-components: always
+  metrics:
+    export:
+      prometheus:
+        enabled: true
+
+# 日志配置
+logging:
+  level:
+    com.creditcontrol.customer: INFO
+    org.springframework.web: INFO
+    org.hibernate.SQL: DEBUG
+    org.hibernate.type.descriptor.sql.BasicBinder: TRACE
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level [%logger{36}] - %msg%n"
+    file: "%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level [%logger{36}] - %msg%n"
+  file:
+    name: logs/notification-service.log
+    max-size: 100MB
+    max-history: 30
+
+# 自定义配置
+creditcontrol:
+  customer:
+    cache:
+      ttl: 3600  # 1小时缓存TTL
+      prefix: "customer:"
+    validation:
+      customer-code:
+        pattern: "^[A-Z0-9]{4,20}$"
+        message: "Customer code must be 4-20 alphanumeric characters"

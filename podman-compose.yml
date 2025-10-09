@@ -1,0 +1,187 @@
+# Credit Control System - Podman Compose Configuration
+# 根据 PORT_ALLOCATION_MASTER.md 的端口分配标准
+
+version: '3.8'
+
+services:
+  # 前端服务 (React)
+  frontend:
+    build: ./frontend
+    ports:
+      - "3000:3000"    # 🔒 锁定端口 - React开发服务器
+    environment:
+      - REACT_APP_API_BASE_URL=http://localhost:8080/api/v1
+    depends_on:
+      - gateway
+    networks:
+      - creditcontrol-network
+    restart: unless-stopped
+
+  # API网关 (Nginx)
+  gateway:
+    image: nginx:alpine
+    ports:
+      - "8080:80"      # 🔒 锁定端口 - API网关
+    volumes:
+      - ./backend/infrastructure/nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+    depends_on:
+      - customer-service
+      - credit-service
+      - risk-service
+      - payment-service
+      - report-service
+      - notification-service
+    networks:
+      - creditcontrol-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # 客户管理微服务
+  customer-service:
+    build: ./backend/customer-service
+    ports:
+      - "8081:8080"    # 🔒 锁定端口 - 客户服务
+    environment:
+      - SPRING_PROFILES_ACTIVE=development
+      - SERVER_PORT=8080
+      - DB_HOST=35.77.54.203
+      - DB_PORT=5432
+      - DB_NAME=creditcontrol
+      - DB_USERNAME=creditapp
+      - DB_PASSWORD=creditapp
+      - REDIS_HOST=host.containers.internal
+      - REDIS_PORT=6379
+      - JAVA_OPTS=-Xmx512m -Xms256m
+    networks:
+      - creditcontrol-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/actuator/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    restart: unless-stopped
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # 信用管理微服务
+  credit-service:
+    build: ./backend/credit-service
+    ports:
+      - "8082:8080"    # 🔒 锁定端口 - 信用服务
+    environment:
+      - SPRING_PROFILES_ACTIVE=development
+      - SERVER_PORT=8080
+      - DB_HOST=35.77.54.203
+      - DB_PORT=5432
+      - DB_NAME=creditcontrol
+      - DB_USERNAME=creditapp
+      - DB_PASSWORD=creditapp
+      - REDIS_HOST=host.containers.internal
+      - REDIS_PORT=6379
+    depends_on:
+      - customer-service
+    networks:
+      - creditcontrol-network
+    restart: unless-stopped
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # 风险评估微服务
+  risk-service:
+    build: ./backend/risk-service
+    ports:
+      - "8083:8080"    # 🔒 锁定端口 - 风险服务
+    environment:
+      - SPRING_PROFILES_ACTIVE=development
+      - SERVER_PORT=8080
+      - DB_HOST=35.77.54.203
+      - DB_PORT=5432
+    networks:
+      - creditcontrol-network
+    restart: unless-stopped
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # 付款处理微服务
+  payment-service:
+    build: ./backend/payment-service
+    ports:
+      - "8084:8080"    # 🔒 锁定端口 - 付款服务
+    environment:
+      - SPRING_PROFILES_ACTIVE=development
+      - SERVER_PORT=8080
+      - DB_HOST=35.77.54.203
+      - DB_PORT=5432
+    networks:
+      - creditcontrol-network
+    restart: unless-stopped
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # 报表生成微服务
+  report-service:
+    build: ./backend/report-service
+    ports:
+      - "8085:8080"    # 🔒 锁定端口 - 报表服务
+    environment:
+      - SPRING_PROFILES_ACTIVE=development
+      - SERVER_PORT=8080
+      - DB_HOST=35.77.54.203
+      - DB_PORT=5432
+    networks:
+      - creditcontrol-network
+    restart: unless-stopped
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # 通知推送微服务
+  notification-service:
+    build: ./backend/notification-service
+    ports:
+      - "8086:8080"    # 🔒 锁定端口 - 通知服务
+    environment:
+      - SPRING_PROFILES_ACTIVE=development
+      - SERVER_PORT=8080
+      - DB_HOST=35.77.54.203
+      - DB_PORT=5432
+    networks:
+      - creditcontrol-network
+    restart: unless-stopped
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+# 网络配置
+networks:
+  creditcontrol-network:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.0.0/16
+
+# 卷配置（如需要）
+volumes:
+  logs_data:
+    driver: local
